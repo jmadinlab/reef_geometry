@@ -1,0 +1,15 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+geometry.R
+*.pptx
+*.mov
+*.ply
+*.html
+*.tif
+*.xlsx
+*.zip
+*.xml
+*.qgz
