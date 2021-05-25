@@ -225,9 +225,10 @@ plot(richness ~ D, master)
 plot(abundance ~ H_log10, master)
 plot(richness ~ H_log10, master)
 
-library(rgl)
-plot3d(master$R_log10, master$D, master$H_log10)
+# library(rgl)
+# plot3d(master$R_log10, master$D, master$H_log10)
 
+# Analysis
 
 mod1 <- lm(richness ~ R_log10 + D + H_log10, master)
 drop1(mod1, test="F")
