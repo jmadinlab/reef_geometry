@@ -138,26 +138,23 @@ source("R/functions.R")
 ```{r set_window}
 
 L <- 2 # extent
-store <- data.frame()
+master <- data.frame()
 
-for (rec in c("RR00")) {
-  # rec <- "RR00"
+for (rec in c("S1", "S2", "S3")) {
+  # rec <- "S1"
   
   # Load geotif
   data <- raster(paste0("data/reef_records/", rec, "_DEM.tif"))
-    
-  # Take a look at the reef record spatial metadata
-  data
-    
+
   # Need to reproject raster so that using meters.
   sr <- paste0("+proj=tmerc +lat_0=", data@extent@ymin, " +lon_0=", data@extent@xmin, " +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
   
   # Get bottom left coordinate of 8x8m window
-  pole <- readOGR(paste0("data/coral_annotations/", rec, "/", rec, "_pole.shp"))
+  pole <- readOGR(paste0("data/coral_annotations/", rec, "/", rec, "_center.shp"))
   pole <- spTransform(pole, sr)
   
-  coral_data <- readOGR(paste0("output/coral_annotations/", rec, ".shp"))
-  coral_data <- spTransform(coral_data, sr)
+  # coral_data <- readOGR(paste0("output/coral_annotations/", rec, ".shp"))
+  # coral_data <- spTransform(coral_data, sr)
   
   # points(pole@coords[1], pole@coords[2])
   
@@ -168,11 +165,10 @@ for (rec in c("RR00")) {
   
   data <- raster(paste0("data/reef_records/", rec, "_DEM_RP.tif"))
   
-  # png(paste0("figs/", rec, ".png"))
-  image(data, asp=1, col=terrain.colors(50))
-  points(x0, y0)
+  pdf(paste0("figs/", rec, ".pdf"))
+  plot(data, asp=1, col=terrain.colors(50))
+  points(pole@coords[1], pole@coords[2])
   rect(x0, y0, x0+8, y0+8, lty=2)
-  # dev.off()
   
   # This divides into the 16 sub-windows for D, and calculation R as well
   for (i in seq(0, 8-L, length=8/L)) {
@@ -180,17 +176,17 @@ for (rec in c("RR00")) {
   	  richness <- 0
   	  abundance <- 0
   	  
-  	  coral_temp <- crop(coral_data, extent(x0 + i, x0 + i + L, y0 + j, y0 + j + L))
-  	  # points(coral_data2, col="red")
-  	  if (length(coral_temp) > 0) {
-  	    coral_temp <- coral_temp@data
-  		  richness <- length(unique(coral_temp$species))
-  		  abundance <- length(coral_temp$species)
-  	  }
+  	#   coral_temp <- crop(coral_data, extent(x0 + i, x0 + i + L, y0 + j, y0 + j + L))
+  	#   # points(coral_data2, col="red")
+  	#   if (length(coral_temp) > 0) {
+  	#     coral_temp <- coral_temp@data
+  	# 	  richness <- length(unique(coral_temp$species))
+  	# 	  abundance <- length(coral_temp$species)
+  	#   }
   	  
   		reef_temp <- crop(data, extent(x0 + i, x0 + i + 2, y0 + j, y0 + j + 2))
   		L0 <- xres(reef_temp)
-      H <- diff(range(values(reef_temp)))
+      H <- diff(range(values(reef_temp), na.rm=TRUE))
   		reef_temp <- as(reef_temp, 'SpatialGridDataFrame')
   		R <- surfaceArea(reef_temp) / 4
       D <- D_func(H, R, L, L0)
@@ -198,12 +194,14 @@ for (rec in c("RR00")) {
       rect(x0 + i, y0 + j, x0 + i + 2, y0 + j + L, lty=1, border="white")
       text(mean(c(x0 + i, x0 + i + L)), mean(c(y0 + j, y0 + j + L)), paste("R=", round(R, 2), "\nD=", round(D, 2), "\nH=", round(H, 2)), col="black", cex=0.5)
   
-  		store <- rbind(store, data.frame(rec=rec, x=i, y=j, L, L0, D, R, H, richness, abundance))
+  		master <- rbind(master, data.frame(rec=rec, x=i, y=j, L, L0, D, R, H, richness, abundance))
   	}	
   }
+   dev.off()
+
 }
 
-write.csv(store, paste0("output/master.csv"), row.names=FALSE)
+write.csv(master, paste0("output/master.csv"), row.names=FALSE)
 
 ```
 

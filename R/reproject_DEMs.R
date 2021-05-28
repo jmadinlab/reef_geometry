@@ -1,9 +1,9 @@
 # Cycle through and reproject DEMs with m local axes.
 # Only run once, but useful to have.
 
-for (rec in c("RR01", "RR02", "RR03", "RR04", "RR07", "RR08")) {
+for (rec in c("S2", "S3", "S4")) {
   # Reef record name
-  # rec <- "RR07"
+  rec <- "S3"
   
   # Load geotif
   data <- raster(paste0("data/reef_records/", rec, "_DEM.tif"))
