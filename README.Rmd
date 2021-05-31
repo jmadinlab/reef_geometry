@@ -166,7 +166,7 @@ for (rec in c("S1", "S2", "S3")) {
   data <- raster(paste0("data/reef_records/", rec, "_DEM_RP.tif"))
   
   pdf(paste0("figs/", rec, ".pdf"))
-  plot(data, asp=1, col=terrain.colors(50))
+  plot(data, asp=1, col=topo.colors(50))
   points(pole@coords[1], pole@coords[2])
   rect(x0, y0, x0+8, y0+8, lty=2)
   
