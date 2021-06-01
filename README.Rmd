@@ -153,8 +153,8 @@ for (rec in c("S1", "S2", "S3")) {
   pole <- readOGR(paste0("data/coral_annotations/", rec, "/", rec, "_center.shp"))
   pole <- spTransform(pole, sr)
   
-  # coral_data <- readOGR(paste0("output/coral_annotations/", rec, ".shp"))
-  # coral_data <- spTransform(coral_data, sr)
+  coral_data <- readOGR(paste0("output/coral_annotations/", rec, ".shp"))
+  coral_data <- spTransform(coral_data, sr)
   
   # points(pole@coords[1], pole@coords[2])
   
@@ -166,7 +166,7 @@ for (rec in c("S1", "S2", "S3")) {
   data <- raster(paste0("data/reef_records/", rec, "_DEM_RP.tif"))
   
   pdf(paste0("figs/", rec, ".pdf"))
-  plot(data, asp=1, col=topo.colors(50))
+  plot(data, asp=1)
   points(pole@coords[1], pole@coords[2])
   rect(x0, y0, x0+8, y0+8, lty=2)
   
@@ -176,13 +176,13 @@ for (rec in c("S1", "S2", "S3")) {
   	  richness <- 0
   	  abundance <- 0
   	  
-  	#   coral_temp <- crop(coral_data, extent(x0 + i, x0 + i + L, y0 + j, y0 + j + L))
-  	#   # points(coral_data2, col="red")
-  	#   if (length(coral_temp) > 0) {
-  	#     coral_temp <- coral_temp@data
-  	# 	  richness <- length(unique(coral_temp$species))
-  	# 	  abundance <- length(coral_temp$species)
-  	#   }
+  	  coral_temp <- crop(coral_data, extent(x0 + i, x0 + i + L, y0 + j, y0 + j + L))
+  	  points(coral_temp, col="white", pch=20, cex=0.5)
+  	  if (length(coral_temp) > 0) {
+  	    coral_temp <- coral_temp@data
+  		  richness <- length(unique(coral_temp$species))
+  		  abundance <- length(coral_temp$species)
+  	  }
   	  
   		reef_temp <- crop(data, extent(x0 + i, x0 + i + 2, y0 + j, y0 + j + 2))
   		L0 <- xres(reef_temp)
@@ -210,6 +210,7 @@ write.csv(master, paste0("output/master.csv"), row.names=FALSE)
 ```{r analysis}
 
 master <- read.csv("output/master.csv", as.is=TRUE)
+master <- master[master$abundance > 0,]
 
 master$R_log10 <- log10(master$R)
 master$H_log10 <- log10(master$H)
@@ -228,9 +229,38 @@ plot(richness ~ H_log10, master)
 
 # Analysis
 
-mod1 <- lm(richness ~ R_log10 + D + H_log10, master)
+mod1 <- lm(abundance ~ R_log10 + D, master)
 drop1(mod1, test="F")
 summary(mod1)
+anova(mod1)
+
+master$D_sq <- master$D^2
+
+mod2b <- lm(abundance ~ D + D_sq, master)
+drop1(mod2b, test="F")
+summary(mod2b)
+
+plot(abundance ~ D, master)
+DD <- sort(master$D)
+D_pred <- predict(mod2b, list(D=DD, D_sq=DD^2), se.fit=TRUE)
+lines(DD, D_pred$fit)
+lines(DD, D_pred$fit + D_pred$se.fit, lty=2)
+lines(DD, D_pred$fit - D_pred$se.fit, lty=2)
+
+mod2 <- lm(richness ~ R_log10 + D, master)
+drop1(mod2, test="F")
+summary(mod2)
+
+mod2b <- lm(richness ~ R_log10, master)
+drop1(mod2b, test="F")
+summary(mod2b)
+
+plot(richness ~ R, master)
+RR <- sort(master$R_log10)
+R_pred <- predict(mod2b, list(R_log10=RR), se.fit=TRUE)
+lines(10^RR, R_pred$fit)
+lines(10^RR, R_pred$fit + R_pred$se.fit, lty=2)
+lines(10^RR, R_pred$fit - R_pred$se.fit, lty=2)
 
 ```
 
